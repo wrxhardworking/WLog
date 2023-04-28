@@ -1,4 +1,4 @@
-add_executable(test1 test.cc ../Logger.cpp ../Logger.h ../AsyncLogging.cpp ../AsyncLogging.h ../FixBuffer.hpp)
+add_executable(test1 test.cc)
 target_link_libraries(test1
-    pthread
+        ${PROJECT_NAME}
 )
