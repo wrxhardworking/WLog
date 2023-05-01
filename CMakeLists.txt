@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0.0)
 
-project(Logger VERSION 0.1.1)
+project(WLog VERSION 0.1.1)
 
 set(CMAKE_CXX_STANDARD 17)
 
