@@ -6,13 +6,13 @@ set(CMAKE_CXX_STANDARD 17)
 
 message(BEGIN BUILD)
 
-file(GLOB SRC ./*cpp ./*hpp)
+file(GLOB SRC ${PROJECT_SOURCE_DIR}/*.cpp ${PROJECT_SOURCE_DIR}/*.hpp)
 
 if (NOT "${SRC}" STREQUAL "")
     message(src successful)
 endif ()
 
-file(GLOB DIR ./*h)
+file(GLOB DIR ${PROJECT_SOURCE_DIR}/*.h)
 
 if (NOT "${DIR}" STREQUAL "")
     message(dir successful)
@@ -22,7 +22,9 @@ add_library(${PROJECT_NAME} ${SRC})
 
 target_include_directories(
         ${PROJECT_NAME}
-        PUBLIC ${DIR}
+        PUBLIC
+        ${DIR}
+        ${PROJECT_SOURCE_DIR}
 )
 target_link_libraries(
         ${PROJECT_NAME}

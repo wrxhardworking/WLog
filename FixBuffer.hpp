@@ -1,13 +1,16 @@
 //
 // Created by 28108 on 2022/12/5.
 //
-
 #pragma once
+
+/*
+ *前后端统一的buffer
+ *这是缓冲区用到的buffer
+*/
+
 
 #include <cstring>
 
-//前后端统一的buffer
-//这是缓冲区用到的buffer
 //缓冲区buffer的大小设定
 const int LargeBuffer = 4000 * 1000;   //4MB
 const int SmallBuffer = 4000;
@@ -45,7 +48,7 @@ private:
 
     const char *end() const { return data_ + sizeof data_; }
 
-    char data_[SIZE]{};//  buffer
+    char data_[SIZE]{};
 
-    char *cur_;//这个是当前指针
+    char *cur_;
 };

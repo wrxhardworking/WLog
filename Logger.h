@@ -66,7 +66,7 @@ class LogLever;
 //日志级别
 class LogLever {
 public:
-    enum Lever {        /// 致命情况，系统不可用
+    enum Lever {
         FATAL = 0,
         /// 高优先级情况，例如数据库系统崩溃
         ALERT = 100,
@@ -112,6 +112,7 @@ public:
     auto gettime() const -> uint32_t { return m_time_; }
 
     auto getcontent() const -> const std::string & { return m_content_; }//这是日志信息
+
     auto getlogger() const -> std::shared_ptr<Logger> { return m_logger_; }
 
     auto getLever() const -> LogLever::Lever { return m_lever_; }
@@ -125,9 +126,9 @@ private:
     uint32_t m_threadid_ = 0;          //线程id
     uint32_t m_fiberid_ = 0;           //协程id(感觉现在我用不到)
     uint64_t m_time_ = 0;              //时间戳
-    std::string m_content_;              //日志信息
-    std::shared_ptr<Logger> m_logger_;    //日志器
-    LogLever::Lever m_lever_;        ///日志等级
+    std::string m_content_;            //日志信息
+    std::shared_ptr<Logger> m_logger_; //日志器
+    LogLever::Lever m_lever_;          //日志等级
 
 };
 

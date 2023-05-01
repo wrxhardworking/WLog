@@ -8,6 +8,7 @@ public:
     Timer() {
         m_curTime = std::chrono::high_resolution_clock::now();
     }
+
     ~Timer() {
         auto end = std::chrono::high_resolution_clock::now();
         auto startTime = std::chrono::time_point_cast<std::chrono::microseconds>(m_curTime)
@@ -31,12 +32,12 @@ int main() {
      * part II:
      * 自定义日志名称，日志格式
     */
-#if 1
+#if 0
     {
         Timer timer;
         {
-            for(int i = 0;i<10000;++i){
-                LOG_INFO<<"hello world";
+            for (int i = 0; i < 10000; ++i) {
+                LOG_INFO << "hello world";
             }
         }
     }

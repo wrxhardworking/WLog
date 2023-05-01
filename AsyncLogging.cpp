@@ -29,7 +29,6 @@ AsyncLogging::AsyncLogging(int flushTimeInterval) : flushTimeInterval(flushTimeI
     WorkThread = (std::move(std::thread([this] { backendThread(); })));
 }
 
-//前端进行写的操作
 void AsyncLogging::append(std::string_view log, int len) {
     {
         std::lock_guard<std::mutex> locker(Mutex);
@@ -55,7 +54,6 @@ void AsyncLogging::append(std::string_view log, int len) {
     }
 }
 
-//后台线程所作的事情
 void AsyncLogging::backendThread() {
     //以追加的方式打开一个文件
     FILE *fp = fopen(base, "a+");
@@ -70,7 +68,7 @@ void AsyncLogging::backendThread() {
     //预留空间 省去打日志时申请时间
     BufferToWrite.reserve(16);
     while (running) {
-        //以下是临界区处
+        //以下是临界区
         {
             std::unique_lock<std::mutex> locker(Mutex);
             //fixme 会不会存在虚假唤醒? buffers不为空或者等待事件超过三秒
@@ -91,7 +89,7 @@ void AsyncLogging::backendThread() {
             //fixme 利用宏定义区分操作系统
             fwrite(buffer->data(), 1, buffer->length(), fp);
         }
-        //一般只有一个
+
         if (BufferToWrite.size() > 2) {
             BufferToWrite.resize(2);
         }
@@ -103,7 +101,6 @@ void AsyncLogging::backendThread() {
             replaceBuffer2 = std::move(BufferToWrite.back());
             BufferToWrite.pop_back();
         }
-
         //将写缓冲区置空
         BufferToWrite.clear();
         // fixme flush
@@ -117,7 +114,6 @@ void AsyncLogging::backendThread() {
     }
 }
 
-//传递出一个静态对象
 AsyncLogging *AsyncLogging::getInstance() {
     static AsyncLogging asyncLogging;
     return &asyncLogging;

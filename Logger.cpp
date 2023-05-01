@@ -8,13 +8,11 @@
 #include <string>
 #include <vector>
 #include <map>
-
 #include <ctime>
 
-//带参宏
+
 const char *LogLever::Tostring(LogLever::Lever lever_) {
     //#标识将数据加上一对引号 变成字符串
-
     //将日志等级输出
     switch (lever_) {
 #define XX(name) \
@@ -43,8 +41,7 @@ Logger::Logger(std::string_view name) : m_name_(name) {
 void Logger::log(LogLever::Lever lever_, LogEvent::ptr event) {
     if (lever_ >= m_lever_) {//日志等级大于本身等级
         std::string log;
-        //如果接收到的为空
-
+        //如果接收到的为空 报错
         if ((log = m_formatter_->format(shared_from_this(), lever_, event)).empty())//输出到对应的文件
         {
             std::cout << "file appender error" << std::endl;
@@ -208,8 +205,6 @@ private:
  * 比较麻烦的是%%d，后面可以接一对大括号指定时间格式，比如%%d{%%Y-%%m-%%d %%H:%%M:%%S}，这个状态需要特殊处理
  *
  * 一旦状态出错就停止解析，并设置错误标志，未识别的pattern转义字符也算出错
- *
- *
  */
 
 
