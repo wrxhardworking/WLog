@@ -38,11 +38,11 @@ int main() {
      * part IV:
      * 线程安全的测试
     */
-#if 0
+#if 1
     {
         Timer timer;
         {
-            for (int i = 0; i < 1000000; ++i) {
+            for (int i = 0; i < 10000; ++i) {
                 LOG_INFO<<"hello world";
             }
         }
