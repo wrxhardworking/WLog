@@ -1,7 +1,10 @@
 #pragma once
 
+#include <type_traits>
 #include <fstream>
 #include <list>
+#include <map>
+#include <iostream>
 #include <memory>
 #include <ostream>
 #include <string>
@@ -11,6 +14,7 @@
 
 #include <pthread.h>
 #include <cstdio>
+
 
 #ifdef __linux__
 
@@ -117,7 +121,50 @@ public:
 
     auto getLever() const -> LogLever::Lever { return m_lever_; }
 
-    LogEvent &operator<<(std::string_view content);
+    template<typename T>
+    struct is_template : std::false_type {
+    };
+    template<template<typename...> class Template, typename... Args>
+    struct is_template<Template<Args...>> : std::true_type {
+    };
+
+    template<typename T, typename = typename std::enable_if<!std::is_same_v<T, std::string> && (
+            is_template<T>::value ||
+            std::is_integral_v<T> ||
+            std::is_floating_point_v<T>)>::type>
+    LogEvent &operator<<(const T &contents) {
+        if constexpr (std::is_integral_v<T> || std::is_floating_point_v<T>) {
+            m_content_.append(std::to_string(contents));
+            return *this;
+        }
+
+        if constexpr (is_template<T>::value) {
+            using TYPE = typename T::value_type;
+            if constexpr (std::is_same_v<T, std::vector<TYPE>>) {
+                if constexpr (std::is_integral_v<TYPE> ||
+                              std::is_floating_point_v<TYPE>) {
+                    for (auto &&content: contents) {
+                        m_content_.append(std::to_string(content));
+                    }
+                    return *this;
+                } else if (std::is_same_v<TYPE, std::string> ||
+                           std::is_same_v<TYPE, const std::string> ||
+                           std::is_same_v<TYPE, const char *> ||
+                           std::is_same_v<TYPE, char *>) {
+                    for (auto &&content: contents) {
+                        m_content_.append(content);
+                    }
+                    return *this;
+                }
+            }
+        }
+        return *this;
+    }
+
+    LogEvent &operator<<(std::string_view content) {
+        m_content_.append(content);
+        return *this;
+    }
 
 private:
     const char *m_filename_ = nullptr; //当前日志所在文件名
@@ -132,7 +179,6 @@ private:
 
 };
 
-//日志格式器
 class LogFormatter {
 public:
     using ptr = std::shared_ptr<LogFormatter>;

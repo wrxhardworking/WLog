@@ -309,8 +309,6 @@ void LogFormatter::init() {
 
     //使用map建立字符和 Item的关系
     static std::map<std::string, std::function<FormatterItem::ptr(const std::string &str)> > s_formatters = {
-            //注意下面没有datetime的宏定义 它会在后面做一个特殊处理
-            //这个宏处理直呼较好
 #define xx(str, func) \
     {#str,[](const std::string &fmt){return FormatterItem::ptr(new func(fmt));}}
 
@@ -356,10 +354,6 @@ LogEvent::LogEvent(std::shared_ptr<Logger> logger, LogLever::Lever lever, std::s
           m_threadid_(threadid), m_fiberid_(fiber), m_time_(time) {
 }
 
-LogEvent &LogEvent::operator<<(std::string_view content) {
-    m_content_.append(content);
-    return *this;
-}
 
 //创建一个临时对象
 LoggerPackage::LoggerPackage(LogEvent::ptr event) : m_event_(std::move(event)) {
