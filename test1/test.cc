@@ -1,10 +1,10 @@
-#include "../Logger.h"
+#include "../include/Wlog.h"
 
-#include <iostream>
+#include <mutex>
 #include <chrono>
 #include <thread>
-#include <memory>
 
+//定时器 用于测试性能
 class Timer {
 public:
     Timer() {
@@ -19,7 +19,7 @@ public:
                 .time_since_epoch().count();
         auto duration = endTime - startTime;
         double ms = duration * 0.001;//得到毫秒
-        printf("%lld us (%lf ms)\n", duration, ms);
+        printf("%ld us (%lf ms)\n", duration, ms);
         fflush(stdout);
     }
 
@@ -38,12 +38,18 @@ int main() {
      * part IV:
      * 线程安全的测试
     */
+
 #if 1
+    //除去第一条初始化的时间
+    WLOG_LOG_DEBUG << "";
+    WLOG_GET_LOGGER->setIsStdout(false);
     {
-        Timer timer;
-        {
-            for (int i = 0; i < 10000; ++i) {
-                LOG_INFO<<"hello world";
+        for (int j = 0; j < 5; ++j) {
+            Timer timer;
+            {
+                for (int i = 0; i < 1000000; ++i) {
+                    WLOG_LOG_DEBUG << "hello world";
+                }
             }
         }
     }
@@ -51,11 +57,14 @@ int main() {
 #endif
 #if 0
     //设置日志等级
-    GET_LOGGER->setLevel(LogLever::ALERT);
+    WLOG_GET_LOGGER->setLevel(LogLever::ALERT);
     //设置日志名称
-    GET_LOGGER->setName("service");
-//    设置日志格式
-    GET_LOGGER->setFormatter(std::make_shared<LogFormatter>("....."));
+    WLOG_GET_LOGGER->setName("service");
+    //设置日志格式
+    WLOG_GET_LOGGER->setFormatter(".....");
+    //设置输出地限制
+    WLOG_GET_LOGGER->setIsFile(false);
+    WLOG_GET_LOGGER->setIsStdout(false);
     //......敬请期待(指定日志输出地 默认名字是target_name 文件的默认路径是../build(构建目录))
 #endif
 #if 0
@@ -63,25 +72,29 @@ int main() {
     * 1.支持普通字符串类型
     * 2.支持std::string类型
     * 3.支持std::vector<int>,std::vector<std::string>等类型
+    * 4.支持打印地址(十进制进行打印)
     */
+    int a = 100;
     std::string log = "hello world ";
     std::vector<const char *> s{"hello"};
-    LOG_INFO<<log<<s;
-    LOG_INFO<<"HELLO WORLD";
-    LOG_INFO<<std::vector<int>{1,2,3,4,5};
-    LOG_INFO<<1.1111111;
-    LOG_INFO<<111111111;
+    WLOG_LOG_INFO<<log<<s;
+    WLOG_LOG_INFO<<"HELLO WORLD";
+    WLOG_LOG_INFO<<std::vector<int>{1,2,3,4,5};
+    WLOG_LOG_INFO<<1.1111111;
+    WLOG_LOG_INFO<<111111111;
+    WLOG_LOG_INFO<<&a;
 #endif
 #if 0
     std::vector<std::thread> v;
     v.reserve(8);
-for(int i = 0;i<100;i++){
-        v.emplace_back([](){
-            LOG_INFO<<"hello world";
+    for (int i = 0; i < 8; i++) {
+        v.emplace_back([=]() {
+            WLOG_GET_LOGGER->setName("test_logger_" + std::to_string(i));
+            WLOG_LOG_INFO << "hello world";
         });
     }
-for(auto &x :v){
-    x.join();
-}
+    for (auto &x: v) {
+        x.join();
+    }
 #endif
 }

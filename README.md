@@ -283,32 +283,32 @@ void LogFormatter::init(){
 //后台线程所作的事情
 void AsyncLogging::backendThread() {
     //以追加的方式打开一个文件 base为文件路径
-    FILE* fp = fopen(base,"a+");
+    FILE* fp = fopen(base_,"a+");
     //以下两块buffer是为后面的更替做准备
     BufferPtr replaceBuffer1(new Buffer);
     BufferPtr replaceBuffer2(new Buffer);
     //初始化
-    replaceBuffer1->bezero();
-    replaceBuffer2->bezero();
+    replaceBuffer1->beZero();
+    replaceBuffer2->beZero();
     //输出到文件中buffer 用一个容器装起
     Buffers BufferToWrite;
     //预留空间 省去打日志时申请时间
     BufferToWrite.reserve(16);
-    while(running){
+    while(running_){
         //以下是临界区处
         {
-            std::unique_lock<std::mutex> locker(Mutex);
+            std::unique_lock<std::mutex> locker(mutex_);
             //fixme 会不会存在虚假唤醒? buffers不为空或者等待事件超过三秒
-            if (buffers.empty()) {
-                condition.wait_for(locker, std::chrono::seconds(flushTimeInterval));
+            if (buffers_.empty()) {
+                condition_.wait_for(locker, std::chrono::seconds(flushTimeInterval_));
             }
             //超时阶段
-            buffers.push_back(std::move(currentBuffer));
-            currentBuffer = std::move(replaceBuffer1);
-            BufferToWrite.swap(buffers);
+            buffers_.push_back(std::move(currentBuffer_));
+            currentBuffer_ = std::move(replaceBuffer1);
+            BufferToWrite.swap(buffers_);
             //如果预备buffer被占用
-            if (!nextBuffer) {
-                nextBuffer = std::move(replaceBuffer2);
+            if (!nextBuffer_) {
+                nextBuffer_ = std::move(replaceBuffer2);
             }
         }
 

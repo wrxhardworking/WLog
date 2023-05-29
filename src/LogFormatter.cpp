@@ -1,71 +1,23 @@
-#include "Logger.h"
-#include "AsyncLogging.h"
+#include "../include/LogFormatter.h"
+#include "../include/Logger.h"
 
 #include <functional>
-#include <iostream>
-#include <memory>
-#include <ostream>
-#include <string>
-#include <vector>
 #include <map>
-#include <ctime>
+#include <utility>
 
+using namespace wlog;
 
-const char *LogLever::Tostring(LogLever::Lever lever_) {
-    //#标识将数据加上一对引号 变成字符串
-    //将日志等级输出
-    switch (lever_) {
-#define XX(name) \
-    case LogLever::name:\
-        return #name;
-        XX(DEBUG);
-        XX(INFO);
-        XX(WARN);
-        XX(ERROR);
-        XX(FATAL);
-        XX(NOTICE);
-        XX(NOTSET);
-        XX(CRIT);
-        XX(ALERT);
-        //取消已经定义的宏
-#undef XX
-        default:
-            return "UNKNOW";
-    }
-    return "UNKNOW";
-}
-
-Logger::Logger(std::string_view name) : m_name_(name) {
-}
-
-void Logger::log(LogLever::Lever lever_, LogEvent::ptr event) {
-    if (lever_ >= m_lever_) {//日志等级大于本身等级
-        std::string log;
-        //如果接收到的为空 报错
-        if ((log = m_formatter_->format(shared_from_this(), lever_, event)).empty())//输出到对应的文件
-        {
-            std::cout << "file appender error" << std::endl;
-        }
-
-        //向前端的buffer传递
-        std::cout << log;
-        AsyncLogging::getInstance()->append(log, log.length());
-    }
-}
-
-//初始化格式输出
-LogFormatter::LogFormatter(const std::string &pattern) : m_pattern_(pattern) {
+LogFormatter::LogFormatter(std::string_view pattern) : m_pattern_(pattern) {
     init();
 }
 
-//fixme 以下是日志格式 可以扩展 不断增加日志的格式
+// fixme 以下是日志格式 可以扩展 不断增加日志的格式
 //字符型时打印出来
-auto LogFormatter::format(std::shared_ptr<Logger> logger, LogLever::Lever lever, LogEvent::ptr event) -> std::string {
-    std::string log;
+void LogFormatter::format(const std::shared_ptr<Logger> &logger, LogLever::Lever lever,
+                          const LogEvent::ptr &event, std::string &log) {
     for (auto &i: m_items_) {
         i->format(log, logger, lever, event);
     }
-    return log;
 }
 
 //以下的构造函数是为了统一格式
@@ -74,8 +26,9 @@ public:
     explicit MessageFormatItem(const std::string &str = "") {
     }
 
-    void format(std::string &log, std::shared_ptr<Logger> logger, LogLever::Lever lever, LogEvent::ptr event) override {
-        log.append(event->getcontent());
+    void format(std::string &log, const std::shared_ptr<Logger> &logger, LogLever::Lever lever,
+                const LogEvent::ptr &event) override {
+        log.append(event->getContent());
     }
 };
 
@@ -84,7 +37,8 @@ public:
     explicit LeverFormatItem(const std::string &str = "") {
     }
 
-    void format(std::string &log, std::shared_ptr<Logger> logger, LogLever::Lever lever, LogEvent::ptr event) override {
+    void format(std::string &log, const std::shared_ptr<Logger> &logger, LogLever::Lever lever,
+                const LogEvent::ptr &event) override {
         log.append(LogLever::Tostring(lever));
     }
 };
@@ -94,9 +48,10 @@ public:
     explicit ElapseFormatItem(const std::string &str = "") {
     }
 
-    void format(std::string &log, std::shared_ptr<Logger> logger, LogLever::Lever lever, LogEvent::ptr event) override {
+    void format(std::string &log, const std::shared_ptr<Logger> &logger, LogLever::Lever lever,
+                const LogEvent::ptr &event) override {
         //fixme
-        log.append(std::to_string(event->getelape()));
+        log.append(std::to_string(event->getElapse()));
     }
 };
 
@@ -105,10 +60,10 @@ public:
     explicit NameFormatItem(const std::string &str = "") {
     }
 
-    void format(std::string &log, std::shared_ptr<Logger> logger, LogLever::Lever lever, LogEvent::ptr event) override {
-        log.append(logger->getname());
+    void format(std::string &log, const std::shared_ptr<Logger> &logger, LogLever::Lever lever,
+                const LogEvent::ptr &event) override {
+        log.append(logger->getName());
     }
-
 };
 
 class ThreadIdFormatItem : public LogFormatter::FormatterItem {
@@ -116,8 +71,9 @@ public:
     explicit ThreadIdFormatItem(const std::string &str = "") {
     }
 
-    void format(std::string &log, std::shared_ptr<Logger> logger, LogLever::Lever lever, LogEvent::ptr event) override {
-        log.append(std::to_string(event->getthread()));
+    void format(std::string &log, const std::shared_ptr<Logger> &logger, LogLever::Lever lever,
+                const LogEvent::ptr &event) override {
+        log.append(std::to_string(event->getThread()));
     }
 };
 
@@ -126,8 +82,9 @@ public:
     explicit FiberIdFormatItem(const std::string &str = "") {
     }
 
-    void format(std::string &log, std::shared_ptr<Logger> logger, LogLever::Lever lever, LogEvent::ptr event) override {
-        log.append(std::to_string(event->getfiber()));
+    void format(std::string &log, const std::shared_ptr<Logger> &logger, LogLever::Lever lever,
+                const LogEvent::ptr &event) override {
+        log.append(std::to_string(event->getFiber()));
     }
 };
 
@@ -138,9 +95,10 @@ public:
     explicit DateTimeFormatItem(std::string format = "%Y-%M-%d %H:%M:%s") : m_format(std::move(format)) {
     }
 
-    void format(std::string &log, std::shared_ptr<Logger> logger, LogLever::Lever lever, LogEvent::ptr event) override {
-        struct tm tm;
-        time_t time = event->gettime();
+    void format(std::string &log, const std::shared_ptr<Logger> &logger, LogLever::Lever lever,
+                const LogEvent::ptr &event) override {
+        struct tm tm{};
+        time_t time = event->getTime();
         localtime_r(&time, &tm);
         char buf[64];
         strftime(buf, sizeof(buf), m_format.c_str(), &tm);
@@ -156,8 +114,9 @@ public:
     explicit FilenameFormatItem(const std::string &str = "") {
     }
 
-    void format(std::string &log, std::shared_ptr<Logger> logger, LogLever::Lever lever, LogEvent::ptr event) override {
-        log.append(event->getfilename());
+    void format(std::string &log, const std::shared_ptr<Logger> &logger, LogLever::Lever lever,
+                const LogEvent::ptr &event) override {
+        log.append(event->getFilename());
     }
 };
 
@@ -166,8 +125,9 @@ public:
     explicit LineFormatItem(const std::string &str = "") {
     }
 
-    void format(std::string &log, std::shared_ptr<Logger> logger, LogLever::Lever lever, LogEvent::ptr event) override {
-        log.append(std::to_string(event->getline()));
+    void format(std::string &log, const std::shared_ptr<Logger> &logger, LogLever::Lever lever,
+                const LogEvent::ptr &event) override {
+        log.append(std::to_string(event->getLine()));
     }
 };
 
@@ -176,22 +136,24 @@ public:
     explicit NewLineFormatItem(const std::string &str = "") {
     }
 
-    void format(std::string &log, std::shared_ptr<Logger> logger, LogLever::Lever lever, LogEvent::ptr event) override {
+    void format(std::string &log, const std::shared_ptr<Logger> &logger, LogLever::Lever lever,
+                const LogEvent::ptr &event) override {
         log.append("\n");
     }
 };
 
 class StringFormaItem : public LogFormatter::FormatterItem {
 public:
-    explicit StringFormaItem(std::string str) : m_string_(std::move(str)) {
+    explicit StringFormaItem(std::string_view str) : m_string_(str) {
     }
 
-    void format(std::string &log, std::shared_ptr<Logger> logger, LogLever::Lever lever, LogEvent::ptr event) override {
+    void format(std::string &log, const std::shared_ptr<Logger> &logger, LogLever::Lever lever,
+                const LogEvent::ptr &event) override {
         log.append(m_string_);
     }
 
 private:
-    std::string m_string_;
+    const std::string m_string_;
 };
 
 
@@ -293,6 +255,7 @@ void LogFormatter::init() {
             continue;
         }
     }
+
     //退出循环后 也要将常规字符插入其中
     //以下是测试
     // if(!tmp.empty()){
@@ -300,12 +263,12 @@ void LogFormatter::init() {
     //     patterns.emplace_back(std::make_pair(0,tmp));
     //     tmp.clear();
     // }
-    //    // for debug 
+    //    // for debug
     // std::cout << "patterns:" << std::endl;
     // for(auto &v : patterns) {
     //     std::cout << "type = " << v.first << ", value = " << v.second << std::endl;
     // }
-    // std::cout << "dataformat = " << dateFormat << std::endl; 
+    // std::cout << "dataformat = " << dateFormat << std::endl;
 
     //使用map建立字符和 Item的关系
     static std::map<std::string, std::function<FormatterItem::ptr(const std::string &str)> > s_formatters = {
@@ -346,20 +309,7 @@ void LogFormatter::init() {
             }
         }
     }
+    //这里必须直接报错 因为format的格式必须正确 以保证后续日志的正常产出
+    if (error)
+        abort();
 }
-
-LogEvent::LogEvent(std::shared_ptr<Logger> logger, LogLever::Lever lever, std::string_view filename, uint32_t line,
-                   uint32_t elapse, uint32_t threadid, uint32_t fiber, int32_t time)
-        : m_logger_(std::move(logger)), m_lever_(lever), m_filename_(filename.data()), m_line_(line), m_elapse_(elapse),
-          m_threadid_(threadid), m_fiberid_(fiber), m_time_(time) {
-}
-
-
-//创建一个临时对象
-LoggerPackage::LoggerPackage(LogEvent::ptr event) : m_event_(std::move(event)) {
-}
-
-LoggerPackage::~LoggerPackage() {
-    m_event_->getlogger()->log(m_event_->getLever(), m_event_);
-}
-
