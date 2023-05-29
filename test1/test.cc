@@ -1,8 +1,7 @@
-#include "../include/Wlog.h"
-
 #include <mutex>
 #include <chrono>
 #include <thread>
+#include <Wlog.h>
 
 //定时器 用于测试性能
 class Timer {
@@ -39,7 +38,7 @@ int main() {
      * 线程安全的测试
     */
 
-#if 1
+#if 0
     //除去第一条初始化的时间
     WLOG_LOG_DEBUG << "";
     WLOG_GET_LOGGER->setIsStdout(false);

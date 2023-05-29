@@ -12,19 +12,12 @@ if (NOT "${SRC}" STREQUAL "")
     message(src-loading)
 endif ()
 
-file(GLOB DIR ${PROJECT_SOURCE_DIR}/include/*.h)
-
-if (NOT "${DIR}" STREQUAL "")
-    message(dir-loading)
-endif ()
-
 add_library(${PROJECT_NAME} ${SRC})
 
 target_include_directories(
         ${PROJECT_NAME}
         PUBLIC
-        ${DIR}
-        ${PROJECT_SOURCE_DIR}
+        ${PROJECT_SOURCE_DIR}/include
 )
 target_link_libraries(
         ${PROJECT_NAME}
